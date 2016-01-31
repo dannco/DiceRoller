@@ -3,11 +3,11 @@ Simulates rolling of dice.
 The user enters a command into the program to simulate a roll of that kind.  
 A roll is declared in the notation XdY to roll X dice where each die has Y sides. The value of all the dice are summed up and
 the result is returned to the user. The value of each individual die is displayed to the user.  
-For example, rolling two twenty-sided die would be ``2d20``. This command would return the result of the two dice rolled and the sum, 
+For example, rolling two twenty-sided die would be ``2d20``. Each command returns an output consisting of the initial expression, the expression expanded to display the result of each individual die, and then result of the expression.
 for example ``2d20 : [4, 10] = 14``
 
-The program can also handle input of longer expressions where one roll is added or subtracted to another, one can also 
-use static values to either increase or decrease the expression by a set value.  
+The program is able to handle longer expressions as input, where one roll is added or subtracted to another. One can also 
+use static values to either increase or decrease the expression by a set amount.  
 For example: ``4d12-1d10+3 : [9, 4, 8, 8] - [2] + 3 = 30``
 
 
