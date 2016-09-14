@@ -1,16 +1,16 @@
 import java.util.Random;
 import java.util.Arrays;
+import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Scanner;
+import java.util.stream.IntStream;
 
 class Dice {
-    public static final int DROP_LOW = 0;
-    public static final int DROP_HIGH = 1;
-    static final int ADD = 0;
-    static final int SUB = 1;
-    public static String output = "";
-    protected static int sum;
+    private static final int DROP_LOW = 0, DROP_HIGH = 1, ADD = 1, SUB = -1;
+
+    private static int sum;
+    private static StringJoiner joiner;
     private static Random rng = new Random();
     private static Scanner sc;
     
@@ -21,26 +21,19 @@ class Dice {
             input = sc.nextLine().trim();
             if (input.equals("")) return;
             else {
+                joiner = new StringJoiner(" ").add(input).add(":");
                 parse(input);
-                System.out.println(input+" : "+Dice.output+" = "+sum+"\nRolled "+Dice.sum);
-                output="";
-                sum=0;
-            } 
+                joiner.add("=").add(String.valueOf(sum)).add("\nRolled").add(String.valueOf(sum));
+                System.out.println(joiner.toString());
+            }
         }
     }
     
     public static int parse(String input) {
         sum = 0;
-        String seq;
-        String pattern = "((?:\\+|\\-|\\*)|(?:\\d+d\\d+(?:dL\\d+|dH\\d+)?)|(?:\\d+))";
-        Matcher m = Pattern.compile(pattern).matcher(input);
-        m.find();
-        seq = m.group(0);
-        while (m.find()) {
-            seq+=","+m.group(0);
-        }
+        String[] seq = input.replaceAll("\\s*([+\\-*])\\s*","¤$1¤").split("¤");
         try { 
-            process(seq.split(","));
+            process(seq);
             return sum;
         } catch (Exception e) {
             e.printStackTrace();
@@ -49,35 +42,27 @@ class Dice {
     }
 
     private static void process(String[] seq) throws Exception {
-        int value = 1;
-        int sign = ADD;
+        int value = ADD;
         for (int i = 0; i < seq.length; i++) {
-            if (i>0) {
-                if (seq[i-1].equals("-")) {
-                    sign = SUB;
-                }
-                output += " "+seq[i-1]+" ";
-            }
-            if (seq[i].matches("\\d+")) {
-                value *= Integer.parseInt(seq[i]);
-                output += seq[i];
-            } else if (seq[i].matches("\\d+d\\d+(?:dL\\d+|dH\\d+)?")) {
-                value *= compute(seq[i]);
-            } else throw new Exception("unrecognized pattern");
-            if ((++i<seq.length && !seq[i].equals("*")) ||
-            i==seq.length) {
-                if (sign==ADD) {
+            if (seq[i].length()==0) continue;
+            if (seq[i].matches("[-+*]")) {
+                joiner.add(seq[i]);
+                if (seq[i].matches("[+-]")) {
                     sum += value;
-                } else {
-                    sum -= value;
-                    sign = ADD;
+                    value = seq[i].equals("-") ? SUB : ADD;
                 }
-                value = 1;
+                continue;
             }
+            value *= compute(seq[i]);
         }
+        sum += value;
     }
 
     private static int compute(String expression) {
+        if (expression.matches("\\d+")) {
+            joiner.add(expression);
+            return Integer.parseInt(expression);
+        }
         String pattern = "(\\d+)d(\\d+)((dL|dH)((\\d+)))?";
         Matcher m = Pattern.compile(pattern).matcher(expression);
         m.find();
@@ -99,17 +84,13 @@ class Dice {
     public static int roll(int d, int v, int drop, int dropCount) {
         if (dropCount >= d) throw new IllegalArgumentException(
             "at least one die must be returned.");
-        int[] rolls = new int[d];
-        int sum = 0;
-        for (int i = 0; i<d ; i++) {
-            rolls[i] = Math.abs(rng.nextInt())%v+1;
-            sum+=rolls[i];
-        }
+
+        int[] rolls = IntStream.range(0,d).map(i -> Math.abs(rng.nextInt())%v+1).toArray();
+        int sum = Arrays.stream(rolls).sum();
+
         boolean dropValue;
-        String[] result = new String[d];
-        for (int i=0; i<d; i++) {
-            result[i] = ""+rolls[i];
-        }
+        Object[] result = Arrays.stream(rolls).mapToObj(roll -> String.valueOf(roll)).toArray();
+
         for (int i = 0; i<d && dropCount>0; i++) {
             dropValue = true;
             int count = dropCount;
@@ -129,7 +110,7 @@ class Dice {
                 result[i] += "*";
             }
         }
-        output += Arrays.toString(result);
+        joiner.add(Arrays.toString(result));
         return sum;
     }
 }
